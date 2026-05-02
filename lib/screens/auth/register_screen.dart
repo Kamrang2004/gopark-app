@@ -4,7 +4,6 @@ import 'package:gopark_app/core/api_service.dart';
 import 'package:gopark_app/core/constants.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -19,7 +18,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _unitController = TextEditingController();
   final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   
   // List of controllers for multiple vehicles
@@ -34,7 +32,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   String? _communityName;
   bool _isFetchingLocation = false;
   
-  XFile? _icPhoto;
   String? _extractedIcNumber;
   final TextEditingController _icNumberController = TextEditingController();
   bool _isExtracting = false;
@@ -166,7 +163,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     
     if (image != null) {
       setState(() {
-        _icPhoto = image;
         _isExtracting = true;
         _extractionError = null; // Clear previous error
       });
@@ -201,14 +197,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       } else {
         // Reset state on error so user can retake
         setState(() {
-          _icPhoto = null;
           _isExtracting = false;
           _extractionError = jsonResponse['message'] ?? 'Failed to extract IC. Please try again.';
         });
       }
     } catch (e) {
       setState(() {
-        _icPhoto = null;
         _isExtracting = false;
         _extractionError = 'Connection Error: ${e.toString()}';
       });
@@ -316,12 +310,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   border: Border.all(color: Colors.white, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.primaryBlue.withOpacity(0.08),
+                      color: AppTheme.primaryBlue.withValues(alpha: 0.08),
                       blurRadius: 40,
                       offset: const Offset(0, 20),
                     ),
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.03),
+                      color: Colors.black.withValues(alpha: 0.03),
                       blurRadius: 10,
                       offset: const Offset(0, 5),
                     ),
@@ -345,7 +339,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     else if (_communityName != null)
                       Container(
                         padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.3))),
+                        decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.3))),
                         child: Row(
                           children: [
                             const Icon(Icons.location_on, color: AppTheme.primaryBlue, size: 28),
@@ -379,9 +373,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         padding: const EdgeInsets.all(12),
                         margin: const EdgeInsets.only(bottom: 15),
                         decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.05),
+                          color: Colors.red.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red.withOpacity(0.3)),
+                          border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                         ),
                         child: Row(
                           children: [
@@ -396,7 +390,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       Container(
                         padding: const EdgeInsets.all(16),
                         margin: const EdgeInsets.only(bottom: 15),
-                        decoration: BoxDecoration(color: AppTheme.primaryBlue.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
                         child: Row(
                           children: const [
                             SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBlue)),
@@ -414,7 +408,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           labelText: 'Extracted IC Number',
                           prefixIcon: const Icon(Icons.verified_user, color: Colors.green),
                           filled: true,
-                          fillColor: Colors.green.withOpacity(0.05),
+                          fillColor: Colors.green.withValues(alpha: 0.05),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.green)),
                         ),
                       )
@@ -441,7 +435,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 20),
                     
                     DropdownButtonFormField<String>(
-                      value: _selectedTitle,
+                      initialValue: _selectedTitle,
                       dropdownColor: Colors.white,
                       style: const TextStyle(color: AppTheme.black),
                       items: _titles.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
@@ -502,9 +496,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryBlue.withOpacity(0.05),
+                        color: AppTheme.primaryBlue.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppTheme.primaryBlue.withOpacity(0.1)),
+                        border: Border.all(color: AppTheme.primaryBlue.withValues(alpha: 0.1)),
                       ),
                       child: Row(
                         children: [
@@ -513,7 +507,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           Expanded(
                             child: Text(
                               'Your login username will be your IC Number.',
-                              style: TextStyle(color: AppTheme.primaryBlue.withOpacity(0.8), fontSize: 13, fontWeight: FontWeight.w500),
+                              style: TextStyle(color: AppTheme.primaryBlue.withValues(alpha: 0.8), fontSize: 13, fontWeight: FontWeight.w500),
                             ),
                           ),
                         ],
@@ -591,7 +585,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
                             elevation: 5,
-                            shadowColor: AppTheme.primaryBlue.withOpacity(0.4),
+                            shadowColor: AppTheme.primaryBlue.withValues(alpha: 0.4),
                           ),
                           onPressed: _register,
                           child: const Text('SUBMIT REGISTRATION', style: TextStyle(letterSpacing: 1.2, color: Colors.white)),

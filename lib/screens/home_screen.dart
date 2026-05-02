@@ -396,6 +396,13 @@ class _HomeScreenState extends State<HomeScreen> {
             const SliverToBoxAdapter(child: SizedBox(height: 48)),
           ],
         ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: _launchSupport,
+          backgroundColor: const Color(0xFF25D366),
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: const Icon(Icons.whatsapp_rounded, color: Colors.white, size: 32),
+        ),
       ),
     );
   }

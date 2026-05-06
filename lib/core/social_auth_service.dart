@@ -6,6 +6,7 @@ import 'package:gopark_app/core/api_service.dart';
 class SocialAuthService {
   // Use the Web Client ID from Google Cloud Console so we receive an idToken
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: '102594647490-mmsstgnaoooi88t46hunp19p5cvbvqip.apps.googleusercontent.com', // Needed for iOS if GoogleService-Info.plist is missing
     serverClientId:
         '102594647490-mmsstgnaoooi88t46hunp19p5cvbvqip.apps.googleusercontent.com',
     scopes: ['email', 'profile'],

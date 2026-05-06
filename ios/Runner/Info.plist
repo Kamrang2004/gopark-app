@@ -51,6 +51,17 @@
 	<string>This app needs access to location when open to automatically identify your gated community.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to location to automatically identify your gated community.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.102594647490-mmsstgnaoooi88t46hunp19p5cvbvqip</string>
+			</array>
+		</dict>
+	</array>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>whatsapp</string>

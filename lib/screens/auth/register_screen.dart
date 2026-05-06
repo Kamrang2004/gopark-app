@@ -3,7 +3,6 @@ import 'package:gopark_app/core/theme.dart';
 import 'package:gopark_app/core/api_service.dart';
 import 'package:gopark_app/core/constants.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -157,58 +156,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
   }
 
-  Future<void> _pickIcPhoto() async {
-    final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70);
-    
-    if (image != null) {
-      setState(() {
-        _isExtracting = true;
-        _extractionError = null; // Clear previous error
-      });
-      _extractIcNumber(image);
-    }
-  }
-
-  Future<void> _extractIcNumber(XFile imageFile) async {
-    try {
-      var request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}/community/extract_ic.php'));
-      request.files.add(await http.MultipartFile.fromPath('ic_photo', imageFile.path));
-      request.fields['full_name'] = _nameController.text;
-      
-      var response = await request.send();
-      var responseData = await response.stream.bytesToString();
-      var jsonResponse = jsonDecode(responseData);
-
-      if (jsonResponse['status'] == 'success') {
-        setState(() {
-          _extractedIcNumber = jsonResponse['data']['ic_number'];
-          _icNumberController.text = _extractedIcNumber!;
-          
-          // Auto-fill name if it was empty or extracted
-          String extractedName = jsonResponse['data']['full_name'] ?? '';
-          if (extractedName.isNotEmpty) {
-            _nameController.text = extractedName;
-          }
-          
-          _icPhotoUrl = jsonResponse['data']['ic_photo_url'];
-          _isExtracting = false;
-        });
-      } else {
-        // Reset state on error so user can retake
-        setState(() {
-          _isExtracting = false;
-          _extractionError = jsonResponse['message'] ?? 'Failed to extract IC. Please try again.';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _isExtracting = false;
-        _extractionError = 'Connection Error: ${e.toString()}';
-      });
-    }
-  }
-
   void _register() async {
     // Extract non-empty plates
     List<String> validPlates = _plateControllers
@@ -222,9 +169,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
 
     if (_unitController.text.isEmpty || _nameController.text.isEmpty || 
-        _extractedIcNumber == null || _passwordController.text.isEmpty || 
+        _icNumberController.text.isEmpty || _passwordController.text.isEmpty || 
         validPlates.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please scan your IC and fill all required fields.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please fill all required fields.')));
       return;
     }
 
@@ -363,66 +310,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     
                     const SizedBox(height: 30),
-                    Text('IC Identity Verification', style: Theme.of(context).textTheme.titleLarge?.copyWith(color: AppTheme.black)),
-                    const SizedBox(height: 10),
-                    Text('Take a clear photo of the front of your IC. We will use AI to verify your identity.', style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
                     const SizedBox(height: 15),
-
-                    if (_extractionError != null)
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        margin: const EdgeInsets.only(bottom: 15),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.error_outline, color: Colors.red, size: 20),
-                            const SizedBox(width: 10),
-                            Expanded(child: Text(_extractionError!, style: const TextStyle(color: Colors.red, fontSize: 13, fontWeight: FontWeight.w500))),
-                          ],
-                        ),
+                    TextField(
+                      controller: _icNumberController,
+                      style: const TextStyle(color: AppTheme.black, fontWeight: FontWeight.bold, letterSpacing: 1.5),
+                      decoration: InputDecoration(
+                        labelText: 'IC Number',
+                        prefixIcon: const Icon(Icons.badge, color: AppTheme.primaryBlue),
+                        filled: true,
+                        fillColor: const Color(0xFFF5F7FA),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
-                    
-                    if (_isExtracting)
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        margin: const EdgeInsets.only(bottom: 15),
-                        decoration: BoxDecoration(color: AppTheme.primaryBlue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(12)),
-                        child: Row(
-                          children: const [
-                            SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: AppTheme.primaryBlue)),
-                            SizedBox(width: 15),
-                            Expanded(child: Text('AI is extracting your IC number...', style: TextStyle(color: AppTheme.primaryBlue, fontStyle: FontStyle.italic))),
-                          ],
-                        ),
-                      )
-                    else if (_extractedIcNumber != null)
-                      TextField(
-                        controller: _icNumberController,
-                        readOnly: true,
-                        style: const TextStyle(color: AppTheme.black, fontWeight: FontWeight.bold, letterSpacing: 1.5),
-                        decoration: InputDecoration(
-                          labelText: 'Extracted IC Number',
-                          prefixIcon: const Icon(Icons.verified_user, color: Colors.green),
-                          filled: true,
-                          fillColor: Colors.green.withValues(alpha: 0.05),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.green)),
-                        ),
-                      )
-                    else
-                      OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 20),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          side: const BorderSide(color: AppTheme.primaryBlue, width: 1.5),
-                        ),
-                        onPressed: _pickIcPhoto,
-                        icon: const Icon(Icons.camera_alt),
-                        label: const Text('CAPTURE IC FRONT PHOTO'),
-                      ),
+                    ),
 
                     const SizedBox(height: 30),
                     // TODO:
@@ -453,13 +352,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     const SizedBox(height: 15),
                     TextField(
                       controller: _nameController,
-                      readOnly: true,
                       style: const TextStyle(color: AppTheme.black),
                       decoration: InputDecoration(
                         labelText: 'Full Name',
-                        hintText: 'Will be filled by scanning IC',
-                        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
-                        prefixIcon: const Icon(Icons.badge, color: AppTheme.primaryBlue),
+                        prefixIcon: const Icon(Icons.person, color: AppTheme.primaryBlue),
                         filled: true,
                         fillColor: const Color(0xFFF5F7FA),
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),

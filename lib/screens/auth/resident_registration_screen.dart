@@ -4,11 +4,8 @@ import 'package:gopark_app/core/theme.dart';
 import 'package:gopark_app/core/api_service.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
 import 'package:gopark_app/core/constants.dart';
 import 'dart:convert';
-import 'package:file_picker/file_picker.dart';
 import '../home_screen.dart';
 
 class ResidentRegistrationScreen extends StatefulWidget {
@@ -78,175 +75,7 @@ class _ResidentRegistrationScreenState extends State<ResidentRegistrationScreen>
     }
   }
 
-  // ── IC picking (Camera / Gallery / PDF) ────────────────────────────────────
-
-  void _showICPickerOptions() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Identity Verification',
-                style: GoogleFonts.outfit(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Select a method to verify your residency.',
-                style: GoogleFonts.outfit(fontSize: 14, color: Colors.grey.shade600),
-              ),
-              const SizedBox(height: 24),
-              _buildPickerOption(
-                icon: Icons.camera_alt_rounded,
-                label: 'Scan with Camera',
-                subtitle: 'Take a clear photo of your IC front',
-                color: AppTheme.primaryBlue,
-                onTap: () {
-                  Navigator.pop(context);
-                  _processICFile(method: 'camera');
-                },
-              ),
-              const SizedBox(height: 12),
-              _buildPickerOption(
-                icon: Icons.image_rounded,
-                label: 'Choose from Gallery',
-                subtitle: 'Pick an existing photo of your IC',
-                color: const Color(0xFF10B981),
-                onTap: () {
-                  Navigator.pop(context);
-                  _processICFile(method: 'gallery');
-                },
-              ),
-              const SizedBox(height: 12),
-              _buildPickerOption(
-                icon: Icons.picture_as_pdf_rounded,
-                label: 'Upload PDF Document',
-                subtitle: 'Tenancy agreement or utility bill',
-                color: const Color(0xFF8B5CF6),
-                onTap: () {
-                  Navigator.pop(context);
-                  _processICFile(method: 'pdf');
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPickerOption({
-    required IconData icon,
-    required String label,
-    required String subtitle,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
-              child: Icon(icon, color: color, size: 22),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w700)),
-                  Text(subtitle, style: GoogleFonts.outfit(fontSize: 12, color: Colors.grey.shade500)),
-                ],
-              ),
-            ),
-            Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey.shade400),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _processICFile({required String method}) async {
-    String? filePath;
-    String? fileName;
-
-    if (method == 'camera' || method == 'gallery') {
-      final XFile? image = await ImagePicker().pickImage(
-        source: method == 'camera' ? ImageSource.camera : ImageSource.gallery,
-      );
-      if (image == null) return;
-      filePath = image.path;
-      fileName = 'IC_Photo.png';
-    } else if (method == 'pdf') {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-      if (result == null) return;
-      filePath = result.files.single.path;
-      fileName = result.files.single.name;
-    }
-
-    if (filePath == null) return;
-
-    setState(() => isExtracting = true);
-    try {
-      var request = http.MultipartRequest('POST', Uri.parse('${AppConstants.baseUrl}/community/extract_ic.php'));
-      request.files.add(await http.MultipartFile.fromPath('ic_photo', filePath));
-
-      var streamedResponse = await request.send();
-      var response = await http.Response.fromStream(streamedResponse);
-      var result = json.decode(response.body);
-
-      if (result['status'] == 'success') {
-        final extractedName = (result['data']['full_name'] ?? '').toString().trim().toUpperCase();
-        final sessionName = (widget.user['full_name'] ?? '').toString().trim().toUpperCase();
-
-        if (extractedName.isNotEmpty &&
-            sessionName.isNotEmpty &&
-            extractedName != sessionName &&
-            !extractedName.contains(sessionName) &&
-            !sessionName.contains(extractedName)) {
-          throw 'Notice: ID name ($extractedName) does not match account name (${widget.user['full_name']}). Please upload the correct document.';
-        }
-
-        setState(() {
-          nameController.text = result['data']['full_name'] ?? nameController.text;
-          icController.text = result['data']['ic_number'] ?? icController.text;
-          icPhotoUrl = result['data']['ic_photo_url'];
-          icFileName = fileName;
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Verification document processed'), backgroundColor: Color(0xFF10B981)),
-          );
-        }
-      } else {
-        throw result['message'] ?? 'Failed to process document';
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
-      }
-    } finally {
-      setState(() => isExtracting = false);
-    }
-  }
+  // ── Plates ──────────────────────────────────────────────────────────────────
 
   // ── Plates ──────────────────────────────────────────────────────────────────
 
@@ -374,8 +203,6 @@ class _ResidentRegistrationScreenState extends State<ResidentRegistrationScreen>
                       const SizedBox(height: 8),
                       _buildHeadline(),
                       const SizedBox(height: 24),
-                      _buildIdentityCard(),
-                      const SizedBox(height: 14),
                       _buildLocationCard(),
                       const SizedBox(height: 14),
                       _buildDetailsCard(),
@@ -519,38 +346,7 @@ class _ResidentRegistrationScreenState extends State<ResidentRegistrationScreen>
     );
   }
 
-  // ── Card 1: Identity ──────────────────────────────────────────────────────────
-
-  Widget _buildIdentityCard() {
-    final isDone = icPhotoUrl != null;
-    return _buildCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildStepLabel('STEP 1', 'Identity Verification', AppTheme.primaryBlue),
-          const SizedBox(height: 16),
-          if (isExtracting)
-            _buildLoadingRow('Processing document...')
-          else if (isDone)
-            _buildSuccessAction(
-              icon: icFileName?.endsWith('.pdf') == true ? Icons.picture_as_pdf_rounded : Icons.badge_rounded,
-              color: AppTheme.primaryBlue,
-              title: icFileName ?? nameController.text,
-              subtitle: icFileName != null ? 'Document uploaded' : icController.text,
-              actionLabel: 'Change',
-              onAction: _showICPickerOptions,
-            )
-          else
-            _buildActionButton(
-              icon: Icons.upload_file_rounded,
-              label: 'Verify Identity',
-              color: AppTheme.primaryBlue,
-              onTap: _showICPickerOptions,
-            ),
-        ],
-      ),
-    );
-  }
+  // ── Card 2: Location ──────────────────────────────────────────────────────────
 
   // ── Card 2: Location ──────────────────────────────────────────────────────────
 
@@ -591,8 +387,23 @@ class _ResidentRegistrationScreenState extends State<ResidentRegistrationScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStepLabel('STEP 3', 'Unit & Contact', const Color(0xFF10B981)),
+          _buildStepLabel('STEP 2', 'Resident Details', const Color(0xFF10B981)),
           const SizedBox(height: 16),
+          _buildField(
+            label: 'Full Name',
+            hint: 'Your Legal Name',
+            controller: nameController,
+            icon: Icons.person,
+          ),
+          const SizedBox(height: 14),
+          _buildField(
+            label: 'IC Number',
+            hint: 'e.g. 900101015555',
+            controller: icController,
+            icon: Icons.badge,
+            keyboardType: TextInputType.number,
+          ),
+          const SizedBox(height: 14),
           _buildField(
             label: 'Unit Number',
             hint: 'e.g., NO 77',
@@ -620,7 +431,7 @@ class _ResidentRegistrationScreenState extends State<ResidentRegistrationScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildStepLabel('STEP 4', 'Vehicles', const Color(0xFF8B5CF6)),
+          _buildStepLabel('STEP 3', 'Vehicles', const Color(0xFF8B5CF6)),
           const SizedBox(height: 16),
           ...plateControllers.asMap().entries.map((entry) {
             final idx  = entry.key;

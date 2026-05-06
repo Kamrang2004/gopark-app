@@ -104,7 +104,7 @@ class _DirectorHomeScreenState extends State<DirectorHomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Image.asset(
-              'assets/images/logo_general.png',
+              'assets/images/logo_transparent.png',
               height: 38,
               fit: BoxFit.contain,
             ),

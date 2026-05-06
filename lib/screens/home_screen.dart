@@ -411,7 +411,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Image.asset(
-              'assets/images/app_logo.png',
+              'assets/images/logo_transparent.png',
               height: 42,
               fit: BoxFit.contain,
             ),

@@ -51,6 +51,10 @@
 	<string>This app needs access to location when open to automatically identify your gated community.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>This app needs access to location to automatically identify your gated community.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app needs camera access to scan your IC for identity verification.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library to allow you to upload your IC photo.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>whatsapp</string>

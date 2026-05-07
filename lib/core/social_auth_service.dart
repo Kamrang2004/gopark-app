@@ -51,6 +51,12 @@ class SocialAuthService {
           AppleIDAuthorizationScopes.email,
           AppleIDAuthorizationScopes.fullName,
         ],
+        webAuthenticationOptions: WebAuthenticationOptions(
+          clientId: 'com.gopark.official.service',
+          redirectUri: Uri.parse(
+            'https://technologies.goparkklia.com/apple_callback.php',
+          ),
+        ),
       );
 
       final String? identityToken = credential.identityToken;
